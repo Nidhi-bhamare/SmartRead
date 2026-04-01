@@ -1,0 +1,452 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - SmartRead{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Admin Dashboard - Properly Centered Layout */
+.admin-page {
+    padding: 100px 20px 50px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%);
+}
+
+.admin-container {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    padding: 0 20px;
+}
+
+.admin-header h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.admin-header h1 i {
+    color: #6366f1;
+}
+
+/* Stats Grid - Centered */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 25px;
+    margin-bottom: 40px;
+}
+
+@media (max-width: 1024px) {
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 600px) {
+    .stats-grid { grid-template-columns: 1fr; }
+}
+
+.stat-card {
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.9));
+    border-radius: 20px;
+    padding: 30px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    transition: all 0.3s;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 15px 40px rgba(99, 102, 241, 0.15);
+}
+
+.stat-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.stat-icon.users { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+.stat-icon.books { background: linear-gradient(135deg, #10b981, #059669); }
+.stat-icon.readers { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.stat-icon.quizzes { background: linear-gradient(135deg, #ef4444, #dc2626); }
+
+.stat-info h3 {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 5px;
+    background: linear-gradient(135deg, #fff, #a5b4fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.stat-info p {
+    color: #888;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Content Grid */
+.content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+}
+
+@media (max-width: 900px) {
+    .content-grid { grid-template-columns: 1fr; }
+}
+
+/* Section Cards */
+.admin-section {
+    background: linear-gradient(145deg, rgba(30, 30, 50, 0.9), rgba(20, 20, 40, 0.9));
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.section-header h2 {
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.section-header h2 i {
+    color: #6366f1;
+}
+
+/* Books Table */
+.books-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.book-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 12px;
+    transition: all 0.3s;
+}
+
+.book-item:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.book-item img {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 8px;
+}
+
+.book-item-info {
+    flex: 1;
+}
+
+.book-item-info h4 {
+    font-size: 15px;
+    margin-bottom: 5px;
+}
+
+.book-item-info p {
+    font-size: 12px;
+    color: #888;
+}
+
+.book-item-meta {
+    text-align: right;
+}
+
+.book-item-meta .pages {
+    background: rgba(99, 102, 241, 0.2);
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    color: #a5b4fc;
+}
+
+/* Recent Users */
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.user-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+}
+
+.user-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #6366f1;
+}
+
+.user-item-info h4 {
+    font-size: 14px;
+    margin-bottom: 3px;
+}
+
+.user-item-info p {
+    font-size: 11px;
+    color: #888;
+}
+
+.user-badge {
+    margin-left: auto;
+    padding: 4px 10px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.user-badge.admin {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+}
+
+.user-badge.user {
+    background: rgba(99, 102, 241, 0.2);
+    color: #a5b4fc;
+}
+
+/* Quick Actions */
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-top: 25px;
+}
+
+.action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 25px 15px;
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 15px;
+    color: #a5b4fc;
+    text-decoration: none;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: #6366f1;
+    transform: translateY(-3px);
+}
+
+.action-btn i {
+    font-size: 28px;
+    color: #6366f1;
+}
+
+.action-btn span {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 40px;
+    margin-bottom: 15px;
+    color: #444;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <h1>
+                <i class="fas fa-chart-line"></i>
+                Admin Dashboard
+            </h1>
+            <a href="{{ url_for('upload_book') }}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Upload Book
+            </a>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon users">
+                    <i class="fas fa-users"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_users }}</h3>
+                    <p>Total Users</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon books">
+                    <i class="fas fa-book"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_books }}</h3>
+                    <p>Total Books</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon readers">
+                    <i class="fas fa-book-reader"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ stats.active_readers }}</h3>
+                    <p>Active Today</p>
+                </div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-icon quizzes">
+                    <i class="fas fa-question-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ stats.total_quizzes }}</h3>
+                    <p>Quizzes Taken</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content Grid -->
+        <div class="content-grid">
+            <!-- Recent Books -->
+            <div class="admin-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-book"></i> Recent Books</h2>
+                    <a href="{{ url_for('upload_book') }}" class="btn btn-outline" style="padding: 8px 16px; font-size: 13px;">
+                        View All
+                    </a>
+                </div>
+                
+                {% if books %}
+                <div class="books-list">
+                    {% for book in books %}
+                    <div class="book-item">
+                        <img src="{{ book.cover_url or '/static/images/default-cover.svg' }}" alt="{{ book.title }}">
+                        <div class="book-item-info">
+                            <h4>{{ book.title[:40] }}{% if book.title|length > 40 %}...{% endif %}</h4>
+                            <p>{{ book.author }} • {{ book.category }}</p>
+                        </div>
+                        <div class="book-item-meta">
+                            <span class="pages">{{ book.total_pages }} pages</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="fas fa-book"></i>
+                    <p>No books uploaded yet</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Sidebar -->
+            <div>
+                <!-- Recent Users -->
+                <div class="admin-section" style="margin-bottom: 25px;">
+                    <div class="section-header">
+                        <h2><i class="fas fa-users"></i> Recent Users</h2>
+                    </div>
+                    
+                    {% if recent_users %}
+                    <div class="users-list">
+                        {% for u in recent_users %}
+                        <div class="user-item">
+                            <img src="{{ u.avatar }}" alt="{{ u.username }}">
+                            <div class="user-item-info">
+                                <h4>{{ u.username }}</h4>
+                                <p>{{ u.email }}</p>
+                            </div>
+                            <span class="user-badge {% if u.is_admin %}admin{% else %}user{% endif %}">
+                                {{ 'Admin' if u.is_admin else 'User' }}
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-users"></i>
+                        <p>No users yet</p>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <!-- Quick Actions -->
+                <div class="admin-section">
+                    <div class="section-header">
+                        <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+                    </div>
+                    
+                    <div class="quick-actions">
+                        <a href="{{ url_for('upload_book') }}" class="action-btn">
+                            <i class="fas fa-upload"></i>
+                            <span>Upload Book</span>
+                        </a>
+                        <a href="{{ url_for('library') }}" class="action-btn">
+                            <i class="fas fa-book-open"></i>
+                            <span>View Library</span>
+                        </a>
+                        <a href="{{ url_for('home') }}" class="action-btn">
+                            <i class="fas fa-home"></i>
+                            <span>Go Home</span>
+                        </a>
+                        <a href="#" class="action-btn" onclick="location.reload()">
+                            <i class="fas fa-sync"></i>
+                            <span>Refresh</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SmartRead{% endblock %} - AI Book Platform</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        /* 🔥 STREAK BADGE STYLES */
+        .streak-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+            animation: streak-pulse 2s ease-in-out infinite;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .streak-badge:hover .streak-tooltip {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .streak-badge .fire-icon {
+            font-size: 18px;
+            animation: fire-flicker 0.5s ease-in-out infinite alternate;
+        }
+        
+        .streak-tooltip {
+            position: absolute;
+            top: 50px;
+            right: 0;
+            background: rgba(26, 26, 46, 0.98);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            padding: 15px 20px;
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+        
+        .streak-tooltip h4 {
+            color: #f59e0b;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        
+        .streak-stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-size: 13px;
+        }
+        
+        .streak-stat:last-child {
+            border-bottom: none;
+        }
+        
+        .streak-stat .label {
+            color: #888;
+        }
+        
+        .streak-stat .value {
+            color: #fff;
+            font-weight: 600;
+        }
+        
+        @keyframes streak-pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        @keyframes fire-flicker {
+            0% { transform: rotate(-5deg) scale(1); }
+            100% { transform: rotate(5deg) scale(1.1); }
+        }
+        
+        .streak-badge.no-streak {
+            background: linear-gradient(135deg, #4b5563, #374151);
+            box-shadow: none;
+            animation: none;
+        }
+        
+        .streak-badge.no-streak .fire-icon {
+            animation: none;
+            opacity: 0.5;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="{{ url_for('home') }}" class="logo">
+                <i class="fas fa-book-reader"></i>
+                <span>SmartRead</span>
+            </a>
+            
+            <div class="nav-links">
+                <a href="{{ url_for('home') }}" class="nav-link">Home</a>
+                {% if user %}
+                <a href="{{ url_for('library') }}" class="nav-link">My Library</a>
+                {% endif %}
+                {% if user and user.get('is_admin') %}
+                <a href="{{ url_for('admin_dashboard') }}" class="nav-link admin-link">
+                    <i class="fas fa-cog"></i> Admin
+                </a>
+                {% endif %}
+            </div>
+            
+            <div class="nav-right">
+                {% if user %}
+                <!-- 🔥 STREAK BADGE -->
+                <div class="streak-badge {% if not user.streak or user.streak.current_streak == 0 %}no-streak{% endif %}">
+                    <span class="fire-icon">🔥</span>
+                    <span class="streak-count">{{ user.streak.current_streak if user.streak else 0 }}</span>
+                    
+                    <div class="streak-tooltip">
+                        <h4>📊 Your Reading Stats</h4>
+                        <div class="streak-stat">
+                            <span class="label">Current Streak</span>
+                            <span class="value">🔥 {{ user.streak.current_streak if user.streak else 0 }} days</span>
+                        </div>
+                        <div class="streak-stat">
+                            <span class="label">Longest Streak</span>
+                            <span class="value">🏆 {{ user.streak.longest_streak if user.streak else 0 }} days</span>
+                        </div>
+                        <div class="streak-stat">
+                            <span class="label">Total Reading Days</span>
+                            <span class="value">📚 {{ user.streak.total_reading_days if user.streak else 0 }} days</span>
+                        </div>
+                        <p style="font-size: 11px; color: #888; margin-top: 10px; text-align: center;">
+                            Read daily to keep your streak!
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="user-menu">
+                    <img src="{{ user.avatar }}" alt="Avatar" class="avatar">
+                    <div class="dropdown">
+                        <span class="username">{{ user.username }}</span>
+                        <a href="{{ url_for('library') }}"><i class="fas fa-book"></i> My Library</a>
+                        <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-outline">Sign In</a>
+                <a href="{{ url_for('signup') }}" class="btn btn-primary">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            <span>{{ message }}</span>
+            <button onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand">
+                <i class="fas fa-book-reader"></i>
+                <span>SmartRead</span>
+            </div>
+            <p>AI-Powered Smart Book Reading Platform</p>
+            <p class="copyright">&copy; 2024 SmartRead. All rights reserved.</p>
+        </div>
+    </footer>
+    
+    <!-- Word Meaning Popup -->
+    <div class="word-popup" id="wordPopup">
+        <div class="popup-header">
+            <div>
+                <h3 id="popupWord">Word</h3>
+                <span class="phonetic" id="popupPhonetic"></span>
+            </div>
+            <button class="popup-close" onclick="closeWordPopup()">&times;</button>
+        </div>
+        <div class="popup-body" id="popupBody">
+            <div class="popup-loading">
+                <i class="fas fa-spinner fa-spin"></i> Loading...
+            </div>
+        </div>
+        <div class="popup-footer">
+            <button onclick="playWordAudio()" class="btn-audio" id="audioBtn" style="display:none;">
+                <i class="fas fa-volume-up"></i>
+            </button>
+        </div>
+    </div>
+    
+    <audio id="wordAudio" style="display:none;"></audio>
+    
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

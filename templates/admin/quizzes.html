@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Quizzes - {{ book.title }}{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <div>
+            <h1><i class="fas fa-question-circle"></i> Manage Quizzes</h1>
+            <p>{{ book.title }} - {{ book.total_pages }} pages</p>
+        </div>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back
+        </a>
+    </div>
+    
+    <div class="quiz-info">
+        <div class="info-card">
+            <i class="fas fa-info-circle"></i>
+            <div>
+                <h3>Quiz System</h3>
+                <p>Quizzes appear after every 3 pages. Users must pass (70%+) to unlock next pages.</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quiz Pages -->
+    <div class="quiz-pages-grid">
+        {% for page_num in quiz_pages %}
+        <div class="quiz-page-card {% if quizzes|selectattr('after_page', 'equalto', page_num)|list %}has-quiz{% endif %}">
+            <div class="quiz-page-header">
+                <span class="page-badge">After Page {{ page_num }}</span>
+                {% if quizzes|selectattr('after_page', 'equalto', page_num)|list %}
+                <span class="status-badge success"><i class="fas fa-check"></i> Quiz Added</span>
+                {% else %}
+                <span class="status-badge warning"><i class="fas fa-exclamation"></i> No Quiz</span>
+                {% endif %}
+            </div>
+            
+            <form method="POST" class="quiz-form">
+                <input type="hidden" name="after_page" value="{{ page_num }}">
+                
+                {% set existing_quiz = quizzes|selectattr('after_page', 'equalto', page_num)|first %}
+                
+                <!-- Question 1 -->
+                <div class="question-block">
+                    <label>Question 1</label>
+                    <input type="text" name="question_1" required 
+                           value="{{ existing_quiz.questions[0].question if existing_quiz and existing_quiz.questions|length > 0 else '' }}"
+                           placeholder="Enter question...">
+                    <div class="options-grid">
+                        <div class="option-input">
+                            <span class="option-marker">A</span>
+                            <input type="text" name="option_1_1" required
+                                   value="{{ existing_quiz.questions[0].options[0] if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].options|length > 0 else '' }}"
+                                   placeholder="Option A">
+                        </div>
+                        <div class="option-input">
+                            <span class="option-marker">B</span>
+                            <input type="text" name="option_1_2" required
+                                   value="{{ existing_quiz.questions[0].options[1] if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].options|length > 1 else '' }}"
+                                   placeholder="Option B">
+                        </div>
+                        <div class="option-input">
+                            <span class="option-marker">C</span>
+                            <input type="text" name="option_1_3"
+                                   value="{{ existing_quiz.questions[0].options[2] if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].options|length > 2 else '' }}"
+                                   placeholder="Option C">
+                        </div>
+                        <div class="option-input">
+                            <span class="option-marker">D</span>
+                            <input type="text" name="option_1_4"
+                                   value="{{ existing_quiz.questions[0].options[3] if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].options|length > 3 else '' }}"
+                                   placeholder="Option D">
+                        </div>
+                    </div>
+                    <label>Correct Answer</label>
+                    <select name="correct_1" required>
+                        <option value="1" {% if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].correct_index == 0 %}selected{% endif %}>A</option>
+                        <option value="2" {% if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].correct_index == 1 %}selected{% endif %}>B</option>
+                        <option value="3" {% if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].correct_index == 2 %}selected{% endif %}>C</option>
+                        <option value="4" {% if existing_quiz and existing_quiz.questions|length > 0 and existing_quiz.questions[0].correct_index == 3 %}selected{% endif %}>D</option>
+                    </select>
+                </div>
+                
+                <!-- Question 2 -->
+                <div class="question-block">
+                    <label>Question 2</label>
+                    <input type="text" name="question_2"
+                           value="{{ existing_quiz.questions[1].question if existing_quiz and existing_quiz.questions|length > 1 else '' }}"
+                           placeholder="Enter question (optional)...">
+                    <div class="options-grid">
+                        <div class="option-input">
+                            <span class="option-marker">A</span>
+                            <input type="text" name="option_2_1"
+                                   value="{{ existing_quiz.questions[1].options[0] if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].options|length > 0 else '' }}"
+                                   placeholder="Option A">
+                        </div>
+                        <div class="option-input">
+                            <span class="option-marker">B</span>
+                            <input type="text" name="option_2_2"
+                                   value="{{ existing_quiz.questions[1].options[1] if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].options|length > 1 else '' }}"
+                                   placeholder="Option B">
+                        </div>
+                        <div class="option-input">
+                            <span class="option-marker">C</span>
+                            <input type="text" name="option_2_3"
+                                   value="{{ existing_quiz.questions[1].options[2] if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].options|length > 2 else '' }}"
+                                   placeholder="Option C">
+                        </div>
+                        <div class="option-input">
+                            <span class="option-marker">D</span>
+                            <input type="text" name="option_2_4"
+                                   value="{{ existing_quiz.questions[1].options[3] if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].options|length > 3 else '' }}"
+                                   placeholder="Option D">
+                        </div>
+                    </div>
+                    <label>Correct Answer</label>
+                    <select name="correct_2">
+                        <option value="1" {% if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].correct_index == 0 %}selected{% endif %}>A</option>
+                        <option value="2" {% if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].correct_index == 1 %}selected{% endif %}>B</option>
+                        <option value="3" {% if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].correct_index == 2 %}selected{% endif %}>C</option>
+                        <option value="4" {% if existing_quiz and existing_quiz.questions|length > 1 and existing_quiz.questions[1].correct_index == 3 %}selected{% endif %}>D</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save"></i> Save Quiz
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.quiz-info {
+    margin-bottom: 30px;
+}
+
+.info-card {
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    gap: 15px;
+}
+
+.info-card i {
+    font-size: 24px;
+    color: #6366f1;
+}
+
+.quiz-pages-grid {
+    display: grid;
+    gap: 25px;
+}
+
+.quiz-page-card {
+    background: rgba(30, 30, 50, 0.8);
+    border-radius: 16px;
+    padding: 25px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.quiz-page-card.has-quiz {
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.quiz-page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.page-badge {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+}
+
+.status-badge.success {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.status-badge.warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #f59e0b;
+}
+
+.question-block {
+    background: rgba(0,0,0,0.2);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.question-block label {
+    display: block;
+    color: #a5b4fc;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.question-block input,
+.question-block select {
+    width: 100%;
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 8px;
+    color: #fff;
+    margin-bottom: 15px;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.option-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.option-input input {
+    margin-bottom: 0;
+}
+
+.option-marker {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #6366f1;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 14px;
+}
+</style>
+{% endblock %}

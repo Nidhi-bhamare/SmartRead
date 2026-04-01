@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}My Library - SmartRead{% endblock %}
+
+{% block extra_css %}
+<style>
+.library-page { padding: 100px 4% 50px; max-width: 1600px; margin: 0 auto; }
+.library-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+.library-header h1 { font-size: 2rem; display: flex; align-items: center; gap: 15px; }
+.library-header h1 i { color: var(--primary); }
+.library-header p { color: #888; margin-top: 5px; }
+.library-stats { display: flex; gap: 30px; }
+.stat-item { text-align: center; padding: 15px 25px; background: rgba(99, 102, 241, 0.1); border-radius: 12px; border: 1px solid rgba(99, 102, 241, 0.2); }
+.stat-item .number { font-size: 2rem; font-weight: 700; color: var(--primary); }
+.stat-item .label { font-size: 12px; color: #888; }
+
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 30px; }
+
+.book-card { background: rgba(30, 30, 50, 0.6); border-radius: 16px; overflow: hidden; border: 1px solid rgba(99, 102, 241, 0.1); transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.book-card:hover { border-color: var(--primary); transform: translateY(-10px); box-shadow: 0 20px 50px rgba(99, 102, 241, 0.2); }
+.book-cover { position: relative; width: 100%; height: 300px; overflow: hidden; }
+.book-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.book-card:hover .book-cover img { transform: scale(1.1); }
+.book-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 20px; opacity: 0; transition: opacity 0.3s; }
+.book-card:hover .book-overlay { opacity: 1; }
+.book-overlay .btn { padding: 12px 25px; font-size: 14px; }
+.progress-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; background: rgba(0,0,0,0.6); }
+.progress-bar .progress { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); }
+.progress-badge { position: absolute; top: 15px; right: 15px; padding: 8px 14px; background: rgba(0,0,0,0.7); backdrop-filter: blur(10px); border-radius: 20px; font-size: 12px; font-weight: 600; color: #fff; }
+.progress-badge.completed { background: linear-gradient(135deg, #10b981, #059669); }
+.book-info { padding: 20px; }
+.book-info h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; color: #fff; line-height: 1.4; }
+.book-info .author { color: #888; font-size: 14px; margin-bottom: 10px; }
+.book-meta { display: flex; gap: 15px; font-size: 12px; color: #666; }
+.book-meta span { display: flex; align-items: center; gap: 5px; }
+
+.empty-state { text-align: center; padding: 100px 20px; background: rgba(30, 30, 50, 0.5); border-radius: 20px; }
+.empty-state i { font-size: 5rem; color: #444; margin-bottom: 25px; display: block; }
+.empty-state h2 { margin-bottom: 15px; font-size: 1.8rem; }
+.empty-state p { color: #888; margin-bottom: 30px; font-size: 1.1rem; }
+
+@media (max-width: 768px) {
+    .library-header { flex-direction: column; align-items: flex-start; }
+    .library-stats { width: 100%; justify-content: space-around; }
+    .books-grid { grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .book-cover { height: 220px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="library-page">
+    <div class="library-header">
+        <div>
+            <h1><i class="fas fa-book-reader"></i> My Library</h1>
+            <p>Track your reading progress and continue where you left off</p>
+        </div>
+        <div class="library-stats">
+            <div class="stat-item">
+                <div class="number">{{ books|length }}</div>
+                <div class="label">Total Books</div>
+            </div>
+            <div class="stat-item">
+                <div class="number">{{ books|selectattr('progress')|list|length }}</div>
+                <div class="label">In Progress</div>
+            </div>
+            <div class="stat-item">
+                <div class="number">{{ books|selectattr('progress.is_completed')|list|length }}</div>
+                <div class="label">Completed</div>
+            </div>
+        </div>
+    </div>
+    
+    {% if books %}
+    <div class="books-grid">
+        {% for book in books %}
+        <div class="book-card">
+            <div class="book-cover">
+                <img src="{{ book.cover_url or '/static/images/default-cover.svg' }}" alt="{{ book.title }}">
+                
+                {% if book.progress %}
+                    {% if book.progress.is_completed %}
+                    <span class="progress-badge completed"><i class="fas fa-check"></i> Completed</span>
+                    {% else %}
+                    <span class="progress-badge">{{ book.progress_percent }}%</span>
+                    {% endif %}
+                    <div class="progress-bar"><div class="progress" style="width: {{ book.progress_percent }}%"></div></div>
+                {% endif %}
+                
+                <div class="book-overlay">
+                    {% if book.progress and book.progress.completed_pages %}
+                    <a href="{{ url_for('read_book', book_id=book._id, page=book.progress.current_page|default(1)) }}" class="btn btn-primary">
+                        <i class="fas fa-play"></i> Continue Reading
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('read_book', book_id=book._id, page=1) }}" class="btn btn-primary">
+                        <i class="fas fa-book-open"></i> Start Reading
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="book-info">
+                <h3>{{ book.title[:35] }}{% if book.title|length > 35 %}...{% endif %}</h3>
+                <p class="author">by {{ book.author }}</p>
+                <div class="book-meta">
+                    <span><i class="fas fa-file-alt"></i> {{ book.total_pages }} pages</span>
+                    {% if book.progress %}
+                    <span><i class="fas fa-bookmark"></i> Page {{ book.progress.current_page|default(1) }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-book"></i>
+        <h2>📚 Library is Empty</h2>
+        <p>No books available yet. Check back soon for new content!</p>
+        <a href="{{ url_for('home') }}" class="btn btn-primary btn-lg">
+            <i class="fas fa-home"></i> Go Home
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

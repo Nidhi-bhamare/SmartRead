@@ -1,0 +1,21 @@
+# 📚 SmartRead - Python Dependencies
+# Install: pip install -r requirements.txt
+
+# Flask Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# MongoDB Driver
+pymongo==4.6.1
+
+# PDF Processing
+PyMuPDF==1.23.8
+
+# Environment Variables
+python-dotenv==1.0.0
+
+# HTTP Requests (for APIs)
+requests==2.31.0
+
+# Production Server (optional)
+gunicorn==21.2.0

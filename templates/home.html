@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+
+{% block title %}SmartRead - AI Book Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+.book-section { padding: 50px 4%; overflow: hidden; }
+.section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+.section-title { font-size: 1.6rem; font-weight: 700; display: flex; align-items: center; gap: 12px; margin: 0; }
+.section-title i { color: var(--primary); font-size: 1.4rem; }
+.view-all-btn { display: flex; align-items: center; gap: 8px; padding: 10px 20px; background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 25px; color: var(--primary-light); font-size: 14px; font-weight: 500; transition: all 0.3s; }
+.view-all-btn:hover { background: var(--primary); color: #fff; transform: translateX(5px); }
+
+.book-slider-wrapper { position: relative; overflow: hidden; }
+.book-slider { display: flex; gap: 25px; overflow-x: auto; scroll-behavior: smooth; padding: 20px 10px; scrollbar-width: none; }
+.book-slider::-webkit-scrollbar { display: none; }
+
+.scroll-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 50px; height: 120px; background: linear-gradient(90deg, rgba(10, 10, 20, 0.95), transparent); border: none; color: #fff; font-size: 24px; cursor: pointer; opacity: 0; transition: all 0.3s; z-index: 20; display: flex; align-items: center; justify-content: center; }
+.scroll-btn.right { right: 0; background: linear-gradient(-90deg, rgba(10, 10, 20, 0.95), transparent); }
+.scroll-btn.left { left: 0; }
+.book-slider-wrapper:hover .scroll-btn { opacity: 1; }
+.scroll-btn:hover { color: var(--primary); }
+
+.book-card { flex: 0 0 220px; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); cursor: pointer; }
+.book-card:hover { transform: scale(1.1) translateY(-10px); z-index: 30; }
+.book-cover { position: relative; width: 220px; height: 320px; border-radius: 16px; overflow: hidden; background: linear-gradient(145deg, #1a1a2e, #0f0f1a); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); transition: all 0.4s; }
+.book-card:hover .book-cover { box-shadow: 0 20px 60px rgba(99, 102, 241, 0.3); }
+.book-cover img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.4s; }
+.book-card:hover .book-cover img { transform: scale(1.1); }
+.book-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.3) 50%, transparent 100%); display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding: 20px; opacity: 0; transition: opacity 0.3s; }
+.book-card:hover .book-overlay { opacity: 1; }
+.play-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--gradient); border: none; color: #fff; font-size: 28px; cursor: pointer; margin-bottom: 15px; transition: all 0.3s; box-shadow: 0 10px 30px rgba(99, 102, 241, 0.5); }
+.play-btn:hover { transform: scale(1.15); }
+.overlay-title { font-size: 14px; font-weight: 600; text-align: center; color: #fff; }
+.progress-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 6px; background: rgba(0, 0, 0, 0.6); }
+.progress-bar .progress { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 0 3px 3px 0; }
+.book-info { padding: 18px 8px 8px; }
+.book-info h3 { font-size: 15px; font-weight: 600; margin-bottom: 6px; color: #fff; line-height: 1.3; }
+.book-info .author { font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+.book-info .progress-text { font-size: 12px; color: var(--success); font-weight: 500; }
+.book-info .book-meta { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 5px; }
+.completed-badge { position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
+.new-badge { position: absolute; top: 15px; left: 15px; padding: 5px 12px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 20px; font-size: 11px; font-weight: 700; color: #fff; text-transform: uppercase; }
+.empty-library { text-align: center; padding: 80px 20px; background: rgba(30, 30, 50, 0.5); border-radius: 20px; margin: 20px 4%; }
+.empty-library i { font-size: 5rem; color: var(--text-muted); margin-bottom: 20px; display: block; }
+.empty-library h3 { font-size: 1.5rem; margin-bottom: 10px; }
+.empty-library p { color: var(--text-secondary); margin-bottom: 25px; }
+.hero.compact { min-height: 50vh; padding: 120px 4% 60px; }
+.hero.compact h1 { font-size: 2.5rem; }
+.hero.compact p { font-size: 1.1rem; margin-bottom: 25px; }
+@media (max-width: 768px) { .book-card { flex: 0 0 160px; } .book-cover { width: 160px; height: 230px; } .section-header { flex-direction: column; align-items: flex-start; gap: 15px; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero {% if user %}compact{% endif %}">
+    <div class="hero-bg"></div>
+    <div class="hero-content">
+        {% if user %}
+        <h1>Welcome back, {{ user.username }}! 📚</h1>
+        <p>Continue your reading journey or explore new books</p>
+        {% else %}
+        <h1>Read Smarter, Not Harder</h1>
+        <p>AI-powered reading platform with progress tracking, quizzes, and instant word meanings</p>
+        <div class="hero-buttons">
+            <a href="{{ url_for('signup') }}" class="btn btn-primary btn-lg"><i class="fas fa-rocket"></i> Get Started Free</a>
+            <a href="{{ url_for('login') }}" class="btn btn-outline btn-lg"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+        </div>
+        {% endif %}
+        <div class="hero-features">
+            <div class="feature"><i class="fas fa-book-open"></i><span>PDF Library</span></div>
+            <div class="feature"><i class="fas fa-chart-line"></i><span>Progress Tracking</span></div>
+            <div class="feature"><i class="fas fa-question-circle"></i><span>Quizzes</span></div>
+            <div class="feature"><i class="fas fa-language"></i><span>Word Meanings</span></div>
+            <div class="feature"><i class="fas fa-fire"></i><span>Daily Streak</span></div>
+        </div>
+    </div>
+</section>
+
+{% if continue_reading %}
+<section class="book-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-play-circle"></i> Continue Reading</h2>
+        <a href="{{ url_for('library') }}" class="view-all-btn">View Library <i class="fas fa-arrow-right"></i></a>
+    </div>
+    <div class="book-slider-wrapper">
+        <button class="scroll-btn left" onclick="scrollBooks(this, -1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="book-slider">
+            {% for book in continue_reading %}
+            <a href="{{ url_for('read_book', book_id=book._id, page=book.progress.current_page|default(1)) }}" class="book-card">
+                <div class="book-cover">
+                    <img src="{{ book.cover_url or '/static/images/default-cover.svg' }}" alt="{{ book.title }}">
+                    <div class="book-overlay">
+                        <button class="play-btn"><i class="fas fa-book-reader"></i></button>
+                        <span class="overlay-title">Continue Reading</span>
+                    </div>
+                    <div class="progress-bar"><div class="progress" style="width: {{ book.progress_percent }}%"></div></div>
+                </div>
+                <div class="book-info">
+                    <h3>{{ book.title[:28] }}{% if book.title|length > 28 %}...{% endif %}</h3>
+                    <p class="author">{{ book.author }}</p>
+                    <p class="progress-text"><i class="fas fa-chart-pie"></i> {{ book.progress_percent }}% Complete</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <button class="scroll-btn right" onclick="scrollBooks(this, 1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+{% endif %}
+
+{% if all_books %}
+<section class="book-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-book"></i> Browse Library <span style="font-size: 14px; color: var(--text-muted); font-weight: 400; margin-left: 10px;">({{ all_books|length }} books)</span></h2>
+        {% if user and user.get('is_admin') %}
+        <a href="{{ url_for('upload_book') }}" class="view-all-btn" style="background: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.3); color: #10b981;"><i class="fas fa-plus"></i> Add Book</a>
+        {% endif %}
+    </div>
+    <div class="book-slider-wrapper">
+        <button class="scroll-btn left" onclick="scrollBooks(this, -1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="book-slider">
+            {% for book in all_books %}
+            <a href="{{ url_for('book_detail', book_id=book._id) }}" class="book-card">
+                <div class="book-cover">
+                    <img src="{{ book.cover_url or '/static/images/default-cover.svg' }}" alt="{{ book.title }}">
+                    {% if loop.index <= 3 %}<span class="new-badge">New</span>{% endif %}
+                    <div class="book-overlay">
+                        <button class="play-btn"><i class="fas fa-info-circle"></i></button>
+                        <span class="overlay-title">View Details</span>
+                    </div>
+                </div>
+                <div class="book-info">
+                    <h3>{{ book.title[:28] }}{% if book.title|length > 28 %}...{% endif %}</h3>
+                    <p class="author">{{ book.author }}</p>
+                    <p class="book-meta"><i class="fas fa-file-alt"></i> {{ book.total_pages }} pages</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <button class="scroll-btn right" onclick="scrollBooks(this, 1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+{% else %}
+<section class="empty-library">
+    <i class="fas fa-books"></i>
+    <h3>📚 Library is Empty</h3>
+    <p>{% if user and user.get('is_admin') %}Upload your first book to get started!{% else %}Check back soon for new content!{% endif %}</p>
+    {% if user and user.get('is_admin') %}
+    <a href="{{ url_for('upload_book') }}" class="btn btn-primary"><i class="fas fa-upload"></i> Upload First Book</a>
+    {% endif %}
+</section>
+{% endif %}
+
+{% if completed_books %}
+<section class="book-section">
+    <div class="section-header">
+        <h2 class="section-title"><i class="fas fa-trophy"></i> Completed <span style="font-size: 14px; color: var(--success); font-weight: 400; margin-left: 10px;">🎉 {{ completed_books|length }} finished!</span></h2>
+    </div>
+    <div class="book-slider-wrapper">
+        <button class="scroll-btn left" onclick="scrollBooks(this, -1)"><i class="fas fa-chevron-left"></i></button>
+        <div class="book-slider">
+            {% for book in completed_books %}
+            <a href="{{ url_for('book_detail', book_id=book._id) }}" class="book-card">
+                <div class="book-cover">
+                    <img src="{{ book.cover_url or '/static/images/default-cover.svg' }}" alt="{{ book.title }}">
+                    <div class="completed-badge"><i class="fas fa-check"></i></div>
+                    <div class="book-overlay">
+                        <button class="play-btn"><i class="fas fa-redo"></i></button>
+                        <span class="overlay-title">Read Again</span>
+                    </div>
+                </div>
+                <div class="book-info">
+                    <h3>{{ book.title[:28] }}{% if book.title|length > 28 %}...{% endif %}</h3>
+                    <p class="author">{{ book.author }}</p>
+                    <p class="progress-text" style="color: var(--success);"><i class="fas fa-check-circle"></i> Completed</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <button class="scroll-btn right" onclick="scrollBooks(this, 1)"><i class="fas fa-chevron-right"></i></button>
+    </div>
+</section>
+{% endif %}
+
+<section class="features-section">
+    <h2 class="section-title center"><i class="fas fa-star"></i> Why SmartRead?</h2>
+    <div class="features-grid">
+        <div class="feature-card"><div class="feature-icon"><i class="fas fa-lock"></i></div><h3>Controlled Reading</h3><p>No skipping! Progress through content systematically.</p></div>
+        <div class="feature-card"><div class="feature-icon"><i class="fas fa-question-circle"></i></div><h3>Auto Quizzes</h3><p>AI-generated quizzes every 3 pages.</p></div>
+        <div class="feature-card"><div class="feature-icon"><i class="fas fa-language"></i></div><h3>Word Meanings</h3><p>English, Hindi, and Marathi meanings.</p></div>
+        <div class="feature-card"><div class="feature-icon"><i class="fas fa-fire"></i></div><h3>Streak Tracking</h3><p>Build daily reading habits!</p></div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function scrollBooks(btn, direction) {
+    const slider = btn.parentElement.querySelector('.book-slider');
+    slider.scrollBy({ left: direction * 500, behavior: 'smooth' });
+}
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        const slider = document.querySelector('.book-slider:hover') || document.querySelector('.book-slider');
+        if (slider) slider.scrollBy({ left: (e.key === 'ArrowRight' ? 1 : -1) * 250, behavior: 'smooth' });
+    }
+});
+</script>
+{% endblock %}

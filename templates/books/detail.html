@@ -1,0 +1,219 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - SmartRead{% endblock %}
+
+{% block content %}
+<div class="book-detail-page">
+    <div class="book-hero">
+        <div class="book-hero-bg" style="background-image: url('{{ book.cover_url or '/static/images/default-cover.svg' }}')"></div>
+        <div class="book-hero-content">
+            <div class="book-cover-large">
+                <img src="{{ book.cover_url or '/static/images/default-cover.svg' }}" alt="{{ book.title }}">
+            </div>
+            <div class="book-details">
+                <h1>{{ book.title }}</h1>
+                <p class="author"><i class="fas fa-user"></i> {{ book.author }}</p>
+                
+                <div class="book-meta-row">
+                    <span><i class="fas fa-file-alt"></i> {{ book.total_pages }} Pages</span>
+                    <span><i class="fas fa-font"></i> {{ book.total_words|default(0) }} Words</span>
+                    <span><i class="fas fa-folder"></i> {{ book.category }}</span>
+                </div>
+                
+                {% if progress %}
+                <div class="progress-info">
+                    <div class="progress-bar-large">
+                        <div class="progress" style="width: {{ ((progress.completed_pages|length / book.total_pages) * 100)|int }}%"></div>
+                    </div>
+                    <p>{{ progress.completed_pages|length }} of {{ book.total_pages }} pages completed ({{ ((progress.completed_pages|length / book.total_pages) * 100)|int }}%)</p>
+                </div>
+                {% endif %}
+                
+                <p class="description">{{ book.description }}</p>
+                
+                <div class="book-actions">
+                    {% if progress and progress.completed_pages %}
+                    <a href="{{ url_for('read_book', book_id=book._id, page=progress.current_page) }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-play"></i> Continue Reading (Page {{ progress.current_page }})
+                    </a>
+                    {% else %}
+                    <a href="{{ url_for('read_book', book_id=book._id) }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-book-open"></i> Start Reading
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Chapter/Page Overview -->
+    <section class="pages-section">
+        <h2><i class="fas fa-list"></i> Pages Overview</h2>
+        <div class="pages-grid">
+            {% for i in range(1, book.total_pages + 1) %}
+            <div class="page-item {% if i in progress.completed_pages %}completed{% elif i in progress.unlocked_pages %}unlocked{% else %}locked{% endif %}">
+                <span class="page-num">{{ i }}</span>
+                {% if i in progress.completed_pages %}
+                <i class="fas fa-check-circle" style="color: #10b981;"></i>
+                {% elif i in progress.unlocked_pages %}
+                <i class="fas fa-unlock" style="color: #6366f1;"></i>
+                {% else %}
+                <i class="fas fa-lock" style="color: #666;"></i>
+                {% endif %}
+                {% if i % 3 == 0 %}
+                <span class="quiz-badge">Quiz</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<style>
+.book-detail-page { padding-top: 60px; }
+
+.book-hero {
+    position: relative;
+    padding: 60px 4%;
+    min-height: 500px;
+}
+
+.book-hero-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(20px);
+    opacity: 0.3;
+}
+
+.book-hero-content {
+    position: relative;
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    gap: 50px;
+    align-items: flex-start;
+}
+
+.book-cover-large {
+    flex: 0 0 300px;
+}
+
+.book-cover-large img {
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+
+.book-details {
+    flex: 1;
+}
+
+.book-details h1 {
+    font-size: 2.5rem;
+    margin-bottom: 15px;
+}
+
+.book-details .author {
+    color: #a5b4fc;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+}
+
+.book-meta-row {
+    display: flex;
+    gap: 25px;
+    margin-bottom: 25px;
+    color: #888;
+}
+
+.progress-info {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 20px;
+    border-radius: 12px;
+    margin-bottom: 25px;
+}
+
+.progress-bar-large {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-bar-large .progress {
+    height: 100%;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6);
+}
+
+.description {
+    color: #aaa;
+    line-height: 1.8;
+    margin-bottom: 30px;
+}
+
+.book-actions {
+    display: flex;
+    gap: 15px;
+}
+
+.pages-section {
+    padding: 40px 4%;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.pages-section h2 {
+    margin-bottom: 25px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pages-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 15px;
+}
+
+.page-item {
+    background: rgba(30, 30, 50, 0.8);
+    padding: 15px;
+    border-radius: 10px;
+    text-align: center;
+    position: relative;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.page-item.completed { border-color: #10b981; }
+.page-item.unlocked { border-color: #6366f1; }
+.page-item.locked { opacity: 0.5; }
+
+.page-num {
+    display: block;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.quiz-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #f59e0b;
+    color: #000;
+    font-size: 10px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .book-hero-content { flex-direction: column; }
+    .book-cover-large { flex: 0 0 200px; margin: 0 auto; }
+    .book-details h1 { font-size: 1.8rem; }
+}
+</style>
+{% endblock %}

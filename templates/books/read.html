@@ -1,0 +1,524 @@
+{% extends "base.html" %}
+
+{% block title %}{{ book.title }} - Page {{ page }}{% endblock %}
+
+{% block extra_css %}
+<style>
+.read-page { padding-top: 70px; min-height: 100vh; background: linear-gradient(135deg, #0f0f1a 0%, #1a1a2e 100%); }
+.read-header { position: fixed; top: 0; left: 0; right: 0; background: rgba(10, 10, 20, 0.95); backdrop-filter: blur(10px); padding: 15px 4%; display: flex; align-items: center; justify-content: space-between; z-index: 100; border-bottom: 1px solid rgba(99, 102, 241, 0.2); }
+.read-header .back-btn { display: flex; align-items: center; gap: 8px; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 8px; transition: background 0.3s; }
+.read-header .back-btn:hover { background: rgba(99, 102, 241, 0.2); }
+.read-header .book-title { font-size: 1.1rem; font-weight: 600; color: #fff; }
+.read-header .page-info { display: flex; align-items: center; gap: 15px; }
+.page-indicator { background: rgba(99, 102, 241, 0.2); padding: 8px 16px; border-radius: 20px; font-size: 14px; color: #a5b4fc; }
+.read-container { max-width: 900px; margin: 0 auto; padding: 40px 20px; }
+.content-card { background: rgba(30, 30, 50, 0.8); border-radius: 16px; padding: 40px; margin-bottom: 30px; border: 1px solid rgba(99, 102, 241, 0.1); }
+.page-number-badge { display: inline-flex; align-items: center; gap: 8px; background: linear-gradient(135deg, #6366f1, #8b5cf6); padding: 8px 20px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 25px; }
+.content-text { font-size: 1.15rem; line-height: 2; color: #e0e0e0; text-align: justify; white-space: pre-wrap; }
+.content-text .word { cursor: pointer; transition: all 0.2s; padding: 2px 4px; border-radius: 4px; }
+.content-text .word:hover { background: rgba(99, 102, 241, 0.3); color: #fff; }
+
+/* TTS Speaking Highlight - GREEN GLOW */
+.content-text .word.speaking { 
+    background: linear-gradient(135deg, #10b981, #059669) !important; 
+    color: #fff !important; 
+    padding: 2px 6px;
+    border-radius: 4px;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.6);
+    transform: scale(1.05);
+    transition: all 0.15s ease;
+}
+
+/* TTS Player Styles */
+.tts-player { background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2)); border-radius: 16px; padding: 20px 25px; margin-bottom: 30px; border: 1px solid rgba(99, 102, 241, 0.3); }
+.tts-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; }
+.tts-header h3 { display: flex; align-items: center; gap: 10px; font-size: 1rem; color: #a5b4fc; margin: 0; }
+.tts-header h3 i { font-size: 1.2rem; }
+.tts-status { font-size: 12px; padding: 5px 12px; border-radius: 20px; background: rgba(0,0,0,0.3); color: #888; }
+.tts-status.playing { background: rgba(16, 185, 129, 0.2); color: #10b981; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+.tts-controls { display: flex; align-items: center; gap: 15px; flex-wrap: wrap; }
+.tts-btn { width: 50px; height: 50px; border-radius: 50%; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 20px; transition: all 0.3s; }
+.tts-btn.play { background: linear-gradient(135deg, #10b981, #059669); color: #fff; box-shadow: 0 5px 20px rgba(16, 185, 129, 0.4); }
+.tts-btn.play:hover { transform: scale(1.1); box-shadow: 0 8px 30px rgba(16, 185, 129, 0.5); }
+.tts-btn.play.playing { background: linear-gradient(135deg, #f59e0b, #d97706); }
+.tts-btn.stop { background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 2px solid rgba(239, 68, 68, 0.3); }
+.tts-btn.stop:hover { background: rgba(239, 68, 68, 0.3); }
+.tts-progress { flex: 1; min-width: 200px; }
+.tts-progress-bar { height: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow: hidden; margin-bottom: 5px; }
+.tts-progress-bar .progress { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); width: 0%; transition: width 0.3s; }
+.tts-progress-text { font-size: 11px; color: #888; }
+.tts-settings { display: flex; align-items: center; gap: 15px; }
+.tts-speed { display: flex; align-items: center; gap: 8px; }
+.tts-speed label { font-size: 12px; color: #888; }
+.tts-speed select, .tts-voice select { background: rgba(0,0,0,0.3); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 13px; cursor: pointer; }
+.tts-voice select { max-width: 150px; }
+
+.ai-panel { background: rgba(30, 30, 50, 0.8); border-radius: 16px; padding: 25px; margin-bottom: 30px; border: 1px solid rgba(99, 102, 241, 0.1); }
+.ai-panel h3 { display: flex; align-items: center; gap: 10px; margin-bottom: 15px; color: #a5b4fc; }
+.ai-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.ai-btn { padding: 10px 20px; border-radius: 8px; border: 1px solid rgba(99, 102, 241, 0.3); background: rgba(99, 102, 241, 0.1); color: #a5b4fc; cursor: pointer; transition: all 0.3s; font-size: 14px; }
+.ai-btn:hover { background: rgba(99, 102, 241, 0.3); border-color: #6366f1; }
+.ai-result { margin-top: 20px; padding: 20px; background: rgba(0, 0, 0, 0.3); border-radius: 12px; display: none; white-space: pre-wrap; line-height: 1.8; }
+.ai-result.active { display: block; }
+.read-navigation { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; }
+.nav-btn { display: flex; align-items: center; gap: 10px; padding: 15px 30px; border-radius: 12px; font-weight: 600; transition: all 0.3s; text-decoration: none; }
+.nav-btn.prev { background: rgba(99, 102, 241, 0.2); color: #a5b4fc; }
+.nav-btn.prev:hover { background: rgba(99, 102, 241, 0.4); }
+.nav-btn.next { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+.nav-btn.next:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); }
+.nav-btn.locked { background: rgba(100, 100, 100, 0.3); color: #666; cursor: not-allowed; }
+.complete-btn { padding: 15px 40px; background: linear-gradient(135deg, #10b981, #059669); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s; }
+.complete-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(16, 185, 129, 0.4); }
+.complete-btn:disabled { background: #444; cursor: not-allowed; }
+.quiz-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 20px; }
+.quiz-modal.active { display: flex; }
+.quiz-content { background: linear-gradient(135deg, #1a1a2e, #16213e); border-radius: 20px; padding: 40px; max-width: 600px; width: 100%; max-height: 80vh; overflow-y: auto; border: 1px solid rgba(99, 102, 241, 0.2); }
+.quiz-header { text-align: center; margin-bottom: 30px; }
+.quiz-header h2 { color: #fff; margin-bottom: 10px; }
+.quiz-header p { color: #a5b4fc; }
+.question-card { background: rgba(0, 0, 0, 0.3); border-radius: 12px; padding: 25px; margin-bottom: 20px; }
+.question-text { font-size: 1.1rem; color: #fff; margin-bottom: 20px; white-space: pre-wrap; }
+.options { display: flex; flex-direction: column; gap: 12px; }
+.option { display: flex; align-items: center; gap: 12px; padding: 15px 20px; background: rgba(99, 102, 241, 0.1); border: 2px solid transparent; border-radius: 10px; cursor: pointer; transition: all 0.3s; }
+.option:hover { background: rgba(99, 102, 241, 0.2); border-color: rgba(99, 102, 241, 0.3); }
+.option.selected { background: rgba(99, 102, 241, 0.3); border-color: #6366f1; }
+.option input { display: none; }
+.option-marker { width: 24px; height: 24px; border: 2px solid #6366f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; flex-shrink: 0; }
+.option.selected .option-marker { background: #6366f1; color: #fff; }
+.quiz-submit { width: 100%; padding: 18px; background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; border: none; border-radius: 12px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.3s; }
+.quiz-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99, 102, 241, 0.4); }
+.quiz-result { text-align: center; padding: 40px; display: none; }
+.quiz-result.active { display: block; }
+.quiz-result.passed h2 { color: #10b981; }
+.quiz-result.failed h2 { color: #ef4444; }
+.score-circle { width: 120px; height: 120px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 20px auto; font-size: 2rem; font-weight: 700; }
+.score-circle.passed { background: rgba(16, 185, 129, 0.2); border: 3px solid #10b981; color: #10b981; }
+.score-circle.failed { background: rgba(239, 68, 68, 0.2); border: 3px solid #ef4444; color: #ef4444; }
+.reading-timer { position: fixed; bottom: 20px; right: 20px; background: rgba(30, 30, 50, 0.9); padding: 12px 20px; border-radius: 30px; display: flex; align-items: center; gap: 10px; font-size: 14px; border: 1px solid rgba(99, 102, 241, 0.2); }
+.reading-timer i { color: #6366f1; }
+.progress-overview { display: flex; gap: 20px; margin-bottom: 30px; flex-wrap: wrap; }
+.progress-stat { background: rgba(30, 30, 50, 0.8); padding: 20px; border-radius: 12px; flex: 1; min-width: 150px; text-align: center; border: 1px solid rgba(99, 102, 241, 0.1); }
+.progress-stat .value { font-size: 2rem; font-weight: 700; color: #6366f1; }
+.progress-stat .label { color: #888; font-size: 14px; margin-top: 5px; }
+
+@media (max-width: 768px) {
+    .tts-controls { flex-direction: column; align-items: stretch; }
+    .tts-settings { flex-wrap: wrap; justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="read-page">
+    <div class="read-header">
+        <a href="{{ url_for('book_detail', book_id=book._id) }}" class="back-btn"><i class="fas fa-arrow-left"></i> Back</a>
+        <span class="book-title">{{ book.title }}</span>
+        <div class="page-info"><span class="page-indicator"><i class="fas fa-file-alt"></i> Page {{ page }} of {{ total_pages }}</span></div>
+    </div>
+    
+    <div class="read-container">
+        <div class="progress-overview">
+            <div class="progress-stat"><div class="value">{{ progress.completed_pages|length }}</div><div class="label">Pages Read</div></div>
+            <div class="progress-stat"><div class="value">{{ ((progress.completed_pages|length / total_pages) * 100)|int }}%</div><div class="label">Progress</div></div>
+            <div class="progress-stat"><div class="value">{{ progress.unlocked_pages|length }}</div><div class="label">Unlocked</div></div>
+        </div>
+        
+        <!-- TTS Player -->
+        <div class="tts-player">
+            <div class="tts-header">
+                <h3><i class="fas fa-headphones"></i> AI Reader - Listen to Page</h3>
+                <span class="tts-status" id="ttsStatus">Ready</span>
+            </div>
+            <div class="tts-controls">
+                <button class="tts-btn play" id="ttsPlayBtn" onclick="toggleTTS()">
+                    <i class="fas fa-play" id="ttsPlayIcon"></i>
+                </button>
+                <button class="tts-btn stop" onclick="stopTTS()">
+                    <i class="fas fa-stop"></i>
+                </button>
+                <div class="tts-progress">
+                    <div class="tts-progress-bar"><div class="progress" id="ttsProgress"></div></div>
+                    <div class="tts-progress-text"><span id="ttsCurrentWord">0</span> / <span id="ttsTotalWords">0</span> words</div>
+                </div>
+                <div class="tts-settings">
+                    <div class="tts-speed">
+                        <label><i class="fas fa-tachometer-alt"></i></label>
+                        <select id="ttsSpeed" onchange="updateTTSSpeed()">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1" selected>1x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2">2x</option>
+                        </select>
+                    </div>
+                    <div class="tts-voice">
+                        <label><i class="fas fa-microphone"></i></label>
+                        <select id="ttsVoice"></select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="content-card">
+            <div class="page-number-badge"><i class="fas fa-bookmark"></i> Page {{ page }}</div>
+            <div class="content-text" id="contentText">{% if content.content %}{{ content.content }}{% else %}<p style="color: #888; text-align: center;"><i class="fas fa-exclamation-circle"></i> No content available.</p>{% endif %}</div>
+        </div>
+        
+        <div class="ai-panel">
+            <h3><i class="fas fa-robot"></i> AI Reading Assistant</h3>
+            <div class="ai-buttons">
+                <button class="ai-btn" onclick="aiAssist('summarize')"><i class="fas fa-compress-alt"></i> Summarize</button>
+                <button class="ai-btn" onclick="aiAssist('key_points')"><i class="fas fa-list"></i> Key Points</button>
+                <button class="ai-btn" onclick="aiAssist('simplify')"><i class="fas fa-child"></i> Simplify</button>
+            </div>
+            <div class="ai-result" id="aiResult"></div>
+        </div>
+        
+        <div class="read-navigation">
+            {% if prev_page %}
+            <a href="{{ url_for('read_book', book_id=book._id, page=prev_page) }}" class="nav-btn prev"><i class="fas fa-chevron-left"></i> Previous</a>
+            {% else %}<div></div>{% endif %}
+            
+            {% if page not in progress.completed_pages %}
+            <button class="complete-btn" id="completeBtn" onclick="completePage()"><i class="fas fa-check"></i> Mark as Complete</button>
+            {% elif quiz_required %}
+            <button class="complete-btn" onclick="showQuiz()" style="background: linear-gradient(135deg, #f59e0b, #d97706);"><i class="fas fa-question-circle"></i> Take Quiz</button>
+            {% else %}
+            <span style="color: #10b981;"><i class="fas fa-check-circle"></i> Completed</span>
+            {% endif %}
+            
+            {% if next_page %}
+                {% if next_page_locked %}
+                <span class="nav-btn locked"><i class="fas fa-lock"></i> Locked</span>
+                {% else %}
+                <a href="{{ url_for('read_book', book_id=book._id, page=next_page) }}" class="nav-btn next">Next <i class="fas fa-chevron-right"></i></a>
+                {% endif %}
+            {% else %}
+            <span class="nav-btn next" style="background: linear-gradient(135deg, #10b981, #059669);"><i class="fas fa-flag-checkered"></i> Last Page</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="reading-timer"><i class="fas fa-clock"></i> <span id="readingTime">0:00</span></div>
+</div>
+
+{% if quiz_data %}
+<div class="quiz-modal" id="quizModal">
+    <div class="quiz-content">
+        <div id="quizQuestions">
+            <div class="quiz-header">
+                <h2><i class="fas fa-question-circle"></i> Quiz Time!</h2>
+                <p>Complete this quiz to unlock the next pages</p>
+                <p style="color: #f59e0b;">You need 70% to pass</p>
+            </div>
+            <form id="quizForm">
+                {% for q in quiz_data.questions %}
+                {% set q_index = loop.index0 %}
+                <div class="question-card">
+                    <div class="question-text">{{ loop.index }}. {{ q.question }}</div>
+                    <div class="options">
+                        {% for opt in q.options %}
+                        <label class="option" onclick="selectOption(this)">
+                            <input type="radio" name="q{{ q_index }}" value="{{ loop.index0 }}" required>
+                            <span class="option-marker">{{ ['A', 'B', 'C', 'D'][loop.index0] }}</span>
+                            <span>{{ opt }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+                <button type="button" class="quiz-submit" onclick="submitQuiz()"><i class="fas fa-paper-plane"></i> Submit Answers</button>
+            </form>
+        </div>
+        <div class="quiz-result" id="quizResult">
+            <div class="score-circle" id="scoreCircle">0%</div>
+            <h2 id="resultTitle">Result</h2>
+            <p id="resultMessage"></p>
+            <div class="quiz-result-buttons">
+                <button class="quiz-submit" id="resultBtn" onclick="closeQuiz()">Continue</button>
+                <button class="quiz-submit retake-btn" id="retakeBtn" onclick="retakeQuiz()" style="display:none; background: linear-gradient(135deg, #f59e0b, #d97706); margin-top: 10px;"><i class="fas fa-redo"></i> Retake Quiz</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const bookId = "{{ book._id }}";
+const currentPage = {{ page }};
+let readingSeconds = 0;
+
+setInterval(() => {
+    readingSeconds++;
+    document.getElementById('readingTime').textContent = `${Math.floor(readingSeconds/60)}:${(readingSeconds%60).toString().padStart(2,'0')}`;
+}, 1000);
+
+// ==========================================
+// TEXT-TO-SPEECH WITH WORD HIGHLIGHTING
+// ==========================================
+let ttsUtterance = null;
+let ttsIsPlaying = false;
+let ttsWords = [];
+let ttsCurrentIndex = 0;
+let wordSpans = [];
+
+function initTTS() {
+    const voiceSelect = document.getElementById('ttsVoice');
+    
+    function loadVoices() {
+        const voices = speechSynthesis.getVoices();
+        voiceSelect.innerHTML = '';
+        const defaultVoices = voices.filter(v => v.lang.startsWith('en')).slice(0, 10);
+        const voiceList = defaultVoices.length > 0 ? defaultVoices : voices.slice(0, 10);
+        
+        voiceList.forEach((voice, i) => {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = voice.name.substring(0, 18);
+            option.dataset.voice = voice.name;
+            if (voice.name.includes('Google') || voice.name.includes('Female') || voice.default) option.selected = true;
+            voiceSelect.appendChild(option);
+        });
+    }
+    
+    loadVoices();
+    speechSynthesis.onvoiceschanged = loadVoices;
+    
+    const content = document.getElementById('contentText').innerText;
+    ttsWords = content.split(/\s+/).filter(w => w.length > 0);
+    document.getElementById('ttsTotalWords').textContent = ttsWords.length;
+    
+    // Store word spans for highlighting
+    wordSpans = Array.from(document.querySelectorAll('#contentText .word'));
+}
+
+function toggleTTS() {
+    if (ttsIsPlaying) pauseTTS();
+    else playTTS();
+}
+
+function playTTS() {
+    const content = document.getElementById('contentText').innerText;
+    if (!content || content.trim() === '') return;
+    
+    if (speechSynthesis.paused) {
+        speechSynthesis.resume();
+        ttsIsPlaying = true;
+        updateTTSUI();
+        return;
+    }
+    
+    speechSynthesis.cancel();
+    clearAllHighlights();
+    
+    ttsUtterance = new SpeechSynthesisUtterance(content);
+    
+    const voices = speechSynthesis.getVoices();
+    const voiceSelect = document.getElementById('ttsVoice');
+    if (voices.length > 0 && voiceSelect.selectedIndex >= 0) {
+        const selectedOption = voiceSelect.options[voiceSelect.selectedIndex];
+        const voice = voices.find(v => v.name === selectedOption.dataset.voice);
+        if (voice) ttsUtterance.voice = voice;
+    }
+    
+    ttsUtterance.rate = parseFloat(document.getElementById('ttsSpeed').value);
+    ttsUtterance.pitch = 1;
+    ttsUtterance.volume = 1;
+    
+    ttsCurrentIndex = 0;
+    
+    // WORD HIGHLIGHTING ON BOUNDARY
+    ttsUtterance.onboundary = (event) => {
+        if (event.name === 'word') {
+            // Remove previous highlight
+            if (ttsCurrentIndex > 0 && wordSpans[ttsCurrentIndex - 1]) {
+                wordSpans[ttsCurrentIndex - 1].classList.remove('speaking');
+            }
+            // Add highlight to current word
+            if (wordSpans[ttsCurrentIndex]) {
+                wordSpans[ttsCurrentIndex].classList.add('speaking');
+                // Auto-scroll to keep word visible
+                wordSpans[ttsCurrentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            ttsCurrentIndex++;
+            updateTTSProgress();
+        }
+    };
+    
+    ttsUtterance.onend = () => {
+        ttsIsPlaying = false;
+        ttsCurrentIndex = ttsWords.length;
+        updateTTSUI();
+        updateTTSProgress();
+        clearAllHighlights();
+    };
+    
+    ttsUtterance.onerror = (e) => {
+        console.error('TTS Error:', e);
+        ttsIsPlaying = false;
+        updateTTSUI();
+        clearAllHighlights();
+    };
+    
+    speechSynthesis.speak(ttsUtterance);
+    ttsIsPlaying = true;
+    updateTTSUI();
+}
+
+function pauseTTS() {
+    speechSynthesis.pause();
+    ttsIsPlaying = false;
+    updateTTSUI();
+}
+
+function stopTTS() {
+    speechSynthesis.cancel();
+    ttsIsPlaying = false;
+    ttsCurrentIndex = 0;
+    updateTTSUI();
+    updateTTSProgress();
+    clearAllHighlights();
+}
+
+function clearAllHighlights() {
+    wordSpans.forEach(span => span.classList.remove('speaking'));
+}
+
+function updateTTSSpeed() {
+    if (ttsUtterance && ttsIsPlaying) {
+        stopTTS();
+        playTTS();
+    }
+}
+
+function updateTTSUI() {
+    const playBtn = document.getElementById('ttsPlayBtn');
+    const playIcon = document.getElementById('ttsPlayIcon');
+    const status = document.getElementById('ttsStatus');
+    
+    if (ttsIsPlaying) {
+        playBtn.classList.add('playing');
+        playIcon.className = 'fas fa-pause';
+        status.textContent = '🎧 Playing...';
+        status.classList.add('playing');
+    } else {
+        playBtn.classList.remove('playing');
+        playIcon.className = 'fas fa-play';
+        status.textContent = speechSynthesis.paused ? 'Paused' : 'Ready';
+        status.classList.remove('playing');
+    }
+}
+
+function updateTTSProgress() {
+    const progress = ttsWords.length > 0 ? (ttsCurrentIndex / ttsWords.length) * 100 : 0;
+    document.getElementById('ttsProgress').style.width = progress + '%';
+    document.getElementById('ttsCurrentWord').textContent = ttsCurrentIndex;
+}
+
+document.addEventListener('DOMContentLoaded', initTTS);
+window.addEventListener('beforeunload', () => speechSynthesis.cancel());
+
+// ==========================================
+// WORD LOOKUP & OTHER FEATURES
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const el = document.getElementById('contentText');
+    if (el && el.innerHTML.indexOf('class="word"') === -1) {
+        el.innerHTML = el.innerHTML.replace(/\b([a-zA-Z]{2,})\b/g, '<span class="word" onclick="lookupWord(\'$1\')">$1</span>');
+    }
+});
+
+async function lookupWord(word) {
+    const popup = document.getElementById('wordPopup');
+    if (!popup) return;
+    document.getElementById('popupWord').textContent = word;
+    document.getElementById('popupBody').innerHTML = '<div class="popup-loading"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
+    popup.classList.add('active');
+    popup.style.top = (event.clientY + 20) + 'px';
+    popup.style.left = Math.min(event.clientX, window.innerWidth - 420) + 'px';
+    
+    try {
+        const data = await (await fetch(`/api/word/${word}`)).json();
+        let html = '';
+        if (data.english?.length) { html += '<div class="meaning-section"><h4>📖 English</h4>'; data.english.forEach(m => html += `<div class="meaning-item"><span class="pos">${m.type}</span><p>${m.definition}</p></div>`); html += '</div>'; }
+        if (data.hindi) html += `<div class="meaning-section"><h4>🇮🇳 Hindi</h4><p class="translation">${data.hindi}</p></div>`;
+        if (data.marathi) html += `<div class="meaning-section"><h4>🏴 Marathi</h4><p class="translation">${data.marathi}</p></div>`;
+        if (data.examples?.length) { html += '<div class="meaning-section"><h4>💡 Examples</h4>'; data.examples.forEach(ex => html += `<p class="example">"${ex}"</p>`); html += '</div>'; }
+        document.getElementById('popupBody').innerHTML = html || '<p>No meaning found</p>';
+    } catch { document.getElementById('popupBody').innerHTML = '<p class="error">Error</p>'; }
+}
+
+function closeWordPopup() { const p = document.getElementById('wordPopup'); if(p) p.classList.remove('active'); }
+
+async function completePage() {
+    const btn = document.getElementById('completeBtn');
+    if (!btn) return;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    try {
+        const data = await (await fetch('/api/complete-page', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ book_id: bookId, page: currentPage, time_spent: readingSeconds }) })).json();
+        if (data.quiz_required && document.getElementById('quizModal')) showQuiz();
+        else location.reload();
+    } catch { btn.disabled = false; btn.innerHTML = '<i class="fas fa-check"></i> Mark as Complete'; alert('Error'); }
+}
+
+function showQuiz() { const m = document.getElementById('quizModal'); if (m) m.classList.add('active'); else location.reload(); }
+function closeQuiz() { document.getElementById('quizModal').classList.remove('active'); location.reload(); }
+function selectOption(el) { el.closest('.options').querySelectorAll('.option').forEach(o => o.classList.remove('selected')); el.classList.add('selected'); el.querySelector('input').checked = true; }
+
+const quizQuestions = {% if quiz_data and quiz_data.questions %}{{ quiz_data.questions | tojson }}{% else %}[]{% endif %};
+
+async function submitQuiz() {
+    const formData = new FormData(document.getElementById('quizForm'));
+    const answers = [];
+    let i = 0;
+    while (formData.has(`q${i}`)) { answers.push(parseInt(formData.get(`q${i}`))); i++; }
+    if (answers.length < quizQuestions.length) { alert('Please answer all questions'); return; }
+    
+    try {
+        const data = await (await fetch('/api/submit-quiz', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ book_id: bookId, page: currentPage, answers, questions: quizQuestions }) })).json();
+        document.getElementById('quizQuestions').style.display = 'none';
+        const r = document.getElementById('quizResult');
+        r.classList.remove('passed', 'failed');
+        r.classList.add('active', data.passed ? 'passed' : 'failed');
+        document.getElementById('scoreCircle').className = 'score-circle ' + (data.passed ? 'passed' : 'failed');
+        document.getElementById('scoreCircle').textContent = data.score + '%';
+        document.getElementById('resultTitle').textContent = data.passed ? '🎉 Congratulations!' : '😔 Need 70% to Pass';
+        document.getElementById('resultMessage').textContent = data.message;
+        
+        if (data.passed) {
+            document.getElementById('resultBtn').textContent = 'Continue Reading';
+            document.getElementById('resultBtn').style.display = 'block';
+            document.getElementById('retakeBtn').style.display = 'none';
+        } else {
+            document.getElementById('resultBtn').style.display = 'none';
+            document.getElementById('retakeBtn').style.display = 'block';
+        }
+    } catch { alert('Error'); }
+}
+
+function retakeQuiz() {
+    document.getElementById('quizForm').reset();
+    document.querySelectorAll('.option').forEach(o => o.classList.remove('selected'));
+    document.getElementById('quizResult').classList.remove('active', 'passed', 'failed');
+    document.getElementById('quizQuestions').style.display = 'block';
+    document.querySelector('.quiz-content').scrollTop = 0;
+}
+
+async function aiAssist(action) {
+    const r = document.getElementById('aiResult');
+    r.classList.add('active');
+    r.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Thinking...';
+    try {
+        const data = await (await fetch('/api/ai-assist', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content: document.getElementById('contentText').innerText, action }) })).json();
+        r.innerHTML = data.result || 'No result';
+    } catch { r.innerHTML = 'Error'; }
+}
+
+document.addEventListener('click', e => { if (!e.target.closest('.word-popup') && !e.target.classList.contains('word')) closeWordPopup(); });
+</script>
+{% endblock %}

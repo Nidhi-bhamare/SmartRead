@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Book - SmartRead{% endblock %}
+
+{% block content %}
+<div class="admin-page">
+    <div class="admin-header">
+        <h1><i class="fas fa-upload"></i> Upload New Book</h1>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+    </div>
+    
+    <div class="upload-card">
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('upload_book') }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fas fa-book"></i> Book Title *</label>
+                    <input type="text" name="title" required placeholder="Enter book title">
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-user"></i> Author *</label>
+                    <input type="text" name="author" required placeholder="Author name">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label><i class="fas fa-align-left"></i> Description</label>
+                <textarea name="description" rows="4" placeholder="Book description..."></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fas fa-folder"></i> Category</label>
+                    <select name="category">
+                        <option value="General">General</option>
+                        <option value="Technology">Technology</option>
+                        <option value="Science">Science</option>
+                        <option value="Fiction">Fiction</option>
+                        <option value="Non-Fiction">Non-Fiction</option>
+                        <option value="Education">Education</option>
+                        <option value="Business">Business</option>
+                        <option value="Self-Help">Self-Help</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label><i class="fas fa-file-pdf"></i> PDF File *</label>
+                    <div class="file-upload">
+                        <input type="file" name="pdf_file" id="pdfFile" accept=".pdf" required>
+                        <label for="pdfFile" class="file-label">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <span>Choose PDF file</span>
+                        </label>
+                        <p class="file-name" id="pdfFileName">No file selected</p>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-image"></i> Cover Image</label>
+                    <div class="file-upload">
+                        <input type="file" name="cover_image" id="coverFile" accept="image/*">
+                        <label for="coverFile" class="file-label">
+                            <i class="fas fa-image"></i>
+                            <span>Choose cover image</span>
+                        </label>
+                        <p class="file-name" id="coverFileName">No file selected</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-info">
+                <p><i class="fas fa-info-circle"></i> After uploading, you'll be able to add quizzes for every 3 pages.</p>
+            </div>
+            
+            <button type="submit" class="btn btn-primary btn-block btn-lg">
+                <i class="fas fa-upload"></i> Upload Book & Extract Pages
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+.upload-card {
+    background: rgba(30, 30, 50, 0.8);
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 800px;
+    border: 1px solid rgba(99, 102, 241, 0.1);
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 10px;
+    color: #a5b4fc;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 15px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    border-radius: 10px;
+    color: #fff;
+    font-size: 16px;
+}
+
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #6366f1;
+}
+
+.file-upload {
+    position: relative;
+}
+
+.file-upload input[type="file"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.file-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 30px;
+    border: 2px dashed rgba(99, 102, 241, 0.3);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.file-label:hover {
+    border-color: #6366f1;
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.file-label i {
+    font-size: 2rem;
+    color: #6366f1;
+}
+
+.file-name {
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.form-info {
+    background: rgba(99, 102, 241, 0.1);
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-bottom: 25px;
+}
+
+.form-info p {
+    color: #a5b4fc;
+}
+
+.btn-block {
+    width: 100%;
+}
+
+.btn-lg {
+    padding: 18px 30px;
+    font-size: 18px;
+}
+</style>
+
+<script>
+document.getElementById('pdfFile').addEventListener('change', function() {
+    document.getElementById('pdfFileName').textContent = this.files[0]?.name || 'No file selected';
+});
+
+document.getElementById('coverFile').addEventListener('change', function() {
+    document.getElementById('coverFileName').textContent = this.files[0]?.name || 'No file selected';
+});
+</script>
+{% endblock %}
