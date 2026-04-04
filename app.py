@@ -727,7 +727,8 @@ def api_ai_assist():
         result = f"📖 **Simple Explanation:** {' '.join(content.split()[:30])}..."
     
     return jsonify({'result': result})
-
+from flask import Flask
+app = Flask(__name__, static_folder="static", template_folder="templates")
 
 @app.errorhandler(404)
 def page_not_found(e):
