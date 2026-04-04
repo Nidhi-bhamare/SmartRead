@@ -27,6 +27,8 @@ import fitz  # PyMuPDF for PDF processing
 import requests
 import json
 import re
+import os
+import certifi
 
 # Load environment variables
 load_dotenv()
@@ -43,16 +45,20 @@ app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 100MB max
 ALLOWED_EXTENSIONS = {'pdf'}
 
 # MongoDB Connection
-MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb://localhost:27017/smartread')
+# MongoDB Connection
+MONGODB_URI = os.getenv('MONGODB_URI')
+
+if not MONGODB_URI:
+    raise Exception("❌ MONGODB_URI environment variable not set!")
+
 try:
-    client = MongoClient(MONGODB_URI)
+    client = MongoClient(MONGODB_URI, tlsCAFile=certifi.where())
     client.server_info()
     db = client['smartread']
     print("✅ MongoDB Connected!")
 except Exception as e:
     print(f"⚠️ MongoDB Error: {e}")
-    client = MongoClient('mongodb://localhost:27017/')
-    db = client['smartread']
+    raise
 
 # Collections
 users_col = db['users']
@@ -63,11 +69,17 @@ quiz_results_col = db['quiz_results']
 streaks_col = db['streaks']
 
 # Create indexes
-users_col.create_index('email', unique=True)
-users_col.create_index('username', unique=True)
-progress_col.create_index([('user_id', 1), ('book_id', 1)])
-streaks_col.create_index('user_id', unique=True)
+def init_indexes():
+    try:
+        users_col.create_index('email', unique=True)
+        users_col.create_index('username', unique=True)
+        progress_col.create_index([('user_id', 1), ('book_id', 1)])
+        streaks_col.create_index('user_id', unique=True)
+        print("✅ Indexes created!")
+    except Exception as e:
+        print(f"Index warning: {e}")
 
+init_indexes()
 
 # ============================================
 # HELPER FUNCTIONS
@@ -727,8 +739,6 @@ def api_ai_assist():
         result = f"📖 **Simple Explanation:** {' '.join(content.split()[:30])}..."
     
     return jsonify({'result': result})
-from flask import Flask
-app = Flask(__name__, static_folder="static", template_folder="templates")
 
 @app.errorhandler(404)
 def page_not_found(e):
